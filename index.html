@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>MechLog · Cofidis 2026</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0d0d0d; color: #f0ece4; font-family: 'Barlow Condensed', sans-serif; }
+    ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:#0d0d0d} ::-webkit-scrollbar-thumb{background:#e8a020;border-radius:2px}
+    .btn{cursor:pointer;border:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+    .btn:active{transform:scale(.97)}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-size:10px;font-weight:700;letter-spacing:.14em;color:#e8a020;text-transform:uppercase}
+    .chip{display:inline-flex;align-items:center;padding:6px 12px;border-radius:2px;font-size:12px;font-weight:700;letter-spacing:.05em;cursor:pointer;border:1.5px solid transparent;transition:all .15s;text-transform:uppercase;user-select:none}
+    .chip.sel{border-color:#e8a020;background:rgba(232,160,32,.1);color:#e8a020}
+    .chip:not(.sel){border-color:#252525;color:#484848}
+    .chip:not(.sel):hover{border-color:#383838;color:#666}
+    .card{background:#141414;border:1px solid #1e1e1e;border-radius:5px;padding:14px;cursor:pointer;transition:border-color .2s}
+    .card:hover{border-color:#2a2a2a}
+    .badge{display:inline-block;padding:2px 7px;font-size:10px;font-weight:700;letter-spacing:.08em;border-radius:2px;text-transform:uppercase}
+    @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .su{animation:slideUp .22s ease}
+    @keyframes pop{0%{transform:scale(.7);opacity:0}65%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+    .pop{animation:pop .35s ease forwards}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+    textarea{background:#161616;border:1.5px solid #2a2a2a;color:#f0ece4;padding:10px 14px;font-size:15px;border-radius:4px;outline:none;width:100%;resize:vertical;font-family:'Barlow Condensed',sans-serif;transition:border-color .2s}
+    textarea:focus{border-color:#e8a020}
+    input, select { font-family: 'Barlow Condensed', sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect, useCallback } = React;
+
+    const SUPA_URL = "https://egtthghehjadqyckpxpe.supabase.co";
+    const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndHRoZ2hlaGphZHF5Y2tweHBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTcxMzMsImV4cCI6MjA4ODI3MzEzM30.9ciGSPspGIbUBTAxkSIP1AnN5fcl_YoHnqfEwwaiXCk";
+    const HEADERS = { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" };
+
+    const RIDERS = [
+      "Alex Aranburu","Alex Kirsch","Alexis Renard","Benjamin Thomas","Bryan Coquard",
+      "Camille Charret","Clement Izquierdo","Damien Touze","Dylan Teuns","Edoardo Zamperini",
+      "Emanuel Buchmann","Hugo Page","Ion Izagirre","Jan Maas","Janie Meehan",
+      "Jenthe Biermans","Louis Rouland","Ludovic Robeet","Milan Fretin","Nicolas Debeaumarche",
+      "Oliver Knight","Paul Ourselin","Piet Allegaert","Sam Maisonobe","Sergio Samitier",
+      "Simon Carr","Stan Aniolkowski","Sylvain Moniquet","Valentin Ferron","Yael Joalland"
+    ];
+
+    const RACES = [
+      "4 Jours de Dunkerque","ADAC Cyclassics","AlUla Tour","Amstel Gold Race",
+      "Andorra MoraBanc Clàssica","Antwerp Port Epic / Sels Trophy","Baloise Belgium Tour",
+      "Binche - Chimay - Binche","Boucles de l'Aulne - Châteaulin","Boucles de la Mayenne",
+      "Bredene Koksijde Classic","Bretagne Classic - Ouest-France","Brussels Cycling Classic",
+      "Cholet Agglo Tour","Chrono des Nations","Circuit Franco-Belge","Circuito de Getxo",
+      "Clasica de Almeria","Classic Grand Besançon Doubs","Classic Var",
+      "Classic Velox - Adélie de Vitré","Classica Camp de Morvedre","Clàssica Comunitat Valenciana",
+      "Copenhagen Sprint","Coppa Agostoni - Giro delle Brianze","Coppa Bernocchi - GP Banco BPM",
+      "DSSK Donostia San Sebastian","Danilith Nokere Koerse","De Brabantse Pijl",
+      "Dwars door Vlaanderen","Ename Samyn Classic","Eschborn-Frankfurt",
+      "Etoile de Bessèges - Tour du Gard","Faun Drome Classic","Faun-Ardèche Classic",
+      "Figueira Champions Classic","GP de Fourmies","GP Emilia","GP Industria & Artigianato",
+      "Giro del Veneto","Giro della Toscana","Gran Piemonte","Gran Premio Castellón",
+      "Gran Premio Miguel Indurain","Gran Premio Coppa Sabatini","Grand Prix Criquielion",
+      "Grand Prix de Marseille La Marseillaise","Grand Prix d'Isbergues","Grand Prix de Denain",
+      "Grand Prix de Wallonie","Grand Prix du Morbihan","Grote prijs Jean-Pierre Monseré",
+      "Heylen Vastgoed Heistse Pijl","Il Lombardia","In Flanders Fields - Middelkerke to Wevelgem",
+      "Itzulia Basque Country","Kuurne - Brussel - Kuurne","La Flèche Wallonne","La Polynormande",
+      "La Route d'Occitanie","La Vuelta Ciclista a España","Lidl Deutschland Tour",
+      "Liège-Bastogne-Liège","Memorial Marco Pantani","Mercan'Tour Classic Alpes-Maritimes",
+      "Milano - Torino","Milano-Sanremo","Muscat Classic","Omloop Nieuwsblad",
+      "Paris - Camembert","Paris - Tours","Paris-Chauny","Paris-Nice","Paris-Roubaix",
+      "Presidential Cycling Tour of Turkiye","Ronde Van Brugge - Tour of Bruges",
+      "Ronde van Limburg","Ronde van Vlaanderen","Région Pays de la Loire Tour",
+      "SUPER 8 Classic","Scheldeprijs","Settimana Internazionale Coppi e Bartali",
+      "Sparkassen Münsterland Giro","Tour Auvergne - Rhône-Alpes","Tour Poitou - Charentes",
+      "Tour de France","Tour de Hongrie","Tour de l'Ain","Tour de la Provence",
+      "Tour des Alpes-Maritimes","Tour du Finistère","Tour du Jura Cycliste",
+      "Tour du Limousin-Périgord","Tour of Binzhou","Tour of Guangxi","Tour of Huangshan",
+      "Tour of Oman","Tour of Taihu Lake","Tre Valli Varesine","Tro-Bro Léon",
+      "Trofeo Laigueglia","Trofeo Matteotti","Veneto Classic","Vuelta a Andalucia","Vuelta a Burgos",
+      "Training"
+    ];
+
+    const BIKES = ["Race Bike Home","Race Bike 1","Race Bike 2","Race Bike 3","TT Bike 1","TT Bike 2","Other"];
+    const CATEGORIES = ["Derailleur","Brakes","Wheel / Tyre","Chain / Drivetrain","Handlebar / Stem","Saddle / Seatpost","Pedals / Crankset","Electronics / Di2","Frame / Fork","Other"];
+    const SEVERITY = ["🟢 Minor","🟡 Moderate","🔴 Critical"];
+    const MECHANICS = [
+      "ANSARD Alexis","CITOULA Fernando","SOBOLEWSKI Florent","DANIEL Nicolas",
+      "LAURANCE Franck","MOISAN Killian","MAINGUENAUD Mickael","ZAMAGNA Vincenzo",
+      "ROBERT Franck","MICHELUSI Mattia","WYPELIER Alexandre","VERSTRAETE Jeanick",
+      "GAUTHIER Marc-Antoine","Other"
+    ];
+
+    const initialForm = { race:"", rider:"", bike:"", category:"", severity:"", description:"", mechanic:"", mechanicOther:false, photo:null, photoFile:null, photoPreview:null };
+
+    function Autocomplete({ value, onChange, options, placeholder }) {
+      const [open, setOpen] = useState(false);
+      const [query, setQuery] = useState(value);
+      useEffect(() => { if (!value) setQuery(""); }, [value]);
+      const filtered = query.length > 0 ? options.filter(o => o.toLowerCase().includes(query.toLowerCase())).slice(0, 7) : [];
+      const select = (val) => { setQuery(val); onChange(val); setOpen(false); };
+      return (
+        <div style={{position:"relative"}}>
+          <input value={query} placeholder={placeholder}
+            onChange={e => { setQuery(e.target.value); onChange(""); setOpen(true); }}
+            onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 160)}
+            style={{background:"#161616",border:"1.5px solid #2a2a2a",color:"#f0ece4",padding:"10px 14px",fontSize:16,borderRadius:4,outline:"none",width:"100%",fontFamily:"'Barlow Condensed',sans-serif",transition:"border-color .2s"}}
+            onFocus={e => { setOpen(true); e.target.style.borderColor="#e8a020"; }}
+            onBlur={e => { setTimeout(() => setOpen(false), 160); e.target.style.borderColor="#2a2a2a"; }}
+          />
+          {open && filtered.length > 0 && (
+            <div style={{position:"absolute",top:"calc(100% + 2px)",left:0,right:0,background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:4,zIndex:200,boxShadow:"0 8px 24px rgba(0,0,0,.6)",maxHeight:240,overflowY:"auto"}}>
+              {filtered.map(opt => (
+                <div key={opt} onMouseDown={() => select(opt)}
+                  style={{padding:"9px 14px",fontSize:15,cursor:"pointer",borderBottom:"1px solid #1e1e1e",color:"#e0dcd4",fontFamily:"'Barlow Condensed',sans-serif"}}
+                  onMouseEnter={e => e.currentTarget.style.background="#252525"}
+                  onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                  {opt}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function SelBox({ value, onChange, options, placeholder }) {
+      return (
+        <select value={value} onChange={e => onChange(e.target.value)}
+          style={{background:"#161616",border:"1.5px solid #2a2a2a",color:value?"#f0ece4":"#484848",padding:"10px 14px",fontSize:15,borderRadius:4,outline:"none",width:"100%",fontFamily:"'Barlow Condensed',sans-serif",transition:"border-color .2s"}}
+          onFocus={e => e.target.style.borderColor="#e8a020"}
+          onBlur={e => e.target.style.borderColor="#2a2a2a"}>
+          <option value="">{placeholder}</option>
+          {options.map(o => <option key={o} value={o} style={{background:"#161616",color:"#f0ece4"}}>{o}</option>)}
+        </select>
+      );
+    }
+
+    function App() {
+      const [view, setView] = useState("report");
+      const [form, setForm] = useState(initialForm);
+      const [incidents, setIncidents] = useState([]);
+      const [status, setStatus] = useState("idle");
+      const [loadStatus, setLoadStatus] = useState("idle");
+      const [filter, setFilter] = useState("");
+      const [detail, setDetail] = useState(null);
+      const [saveError, setSaveError] = useState("");
+      const fileRef = useRef();
+
+      const fetchIncidents = useCallback(async () => {
+        setLoadStatus("loading");
+        try {
+          const res = await fetch(`${SUPA_URL}/rest/v1/incidents?select=*&order=created_at.desc`, { headers: HEADERS });
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          setIncidents(data);
+          setLoadStatus("done");
+        } catch {
+          setLoadStatus("error");
+        }
+      }, []);
+
+      useEffect(() => { if (view === "log") fetchIncidents(); }, [view]);
+
+      const handlePhoto = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => setForm(f => ({ ...f, photo: file.name, photoFile: file, photoPreview: ev.target.result }));
+        reader.readAsDataURL(file);
+      };
+
+      const uploadPhoto = async (file) => {
+        const ext = file.name.split(".").pop();
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const res = await fetch(`${SUPA_URL}/storage/v1/object/photos/${filename}`, {
+          method: "POST",
+          headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": file.type },
+          body: file
+        });
+        if (!res.ok) throw new Error("Photo upload failed");
+        return `${SUPA_URL}/storage/v1/object/public/photos/${filename}`;
+      };
+
+      const isValid = form.race && form.rider && form.category && form.severity && form.description.trim().length > 0 && form.mechanic;
+
+      const handleSubmit = async () => {
+        if (!isValid) return;
+        setStatus("saving");
+        setSaveError("");
+        try {
+          let photo_url = null;
+          if (form.photoFile) {
+            try { photo_url = await uploadPhoto(form.photoFile); } catch {}
+          }
+          const payload = {
+            race: form.race, rider: form.rider, bike: form.bike || null,
+            category: form.category, severity: form.severity,
+            description: form.description, mechanic: form.mechanic, photo_url
+          };
+          const res = await fetch(`${SUPA_URL}/rest/v1/incidents`, {
+            method: "POST",
+            headers: { ...HEADERS, "Prefer": "return=representation" },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(await res.text());
+          setStatus("success");
+          setTimeout(() => { setStatus("idle"); setForm(initialForm); }, 2500);
+        } catch (e) {
+          setSaveError("Could not save. Check your connection.");
+          setStatus("error");
+          setTimeout(() => setStatus("idle"), 3000);
+        }
+      };
+
+      const sevColor = (s) => s?.includes("Critical") ? "#e85020" : s?.includes("Moderate") ? "#e8a020" : "#3db86b";
+      const filtered = incidents.filter(i => !filter || [i.race,i.rider,i.category,i.bike,i.mechanic].some(v => v?.toLowerCase().includes(filter.toLowerCase())));
+      const counts = { critical: incidents.filter(i => i.severity?.includes("Critical")).length, moderate: incidents.filter(i => i.severity?.includes("Moderate")).length, minor: incidents.filter(i => i.severity?.includes("Minor")).length };
+
+      return (
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",background:"#0d0d0d",minHeight:"100vh",color:"#f0ece4"}}>
+
+          {/* Header */}
+          <div style={{background:"#0a0a0a",borderBottom:"2px solid #e8a020",padding:"0 16px",position:"sticky",top:0,zIndex:50}}>
+            <div style={{maxWidth:620,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:52}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:8}}>
+                <span style={{fontSize:19,fontWeight:800,color:"#e8a020"}}>🔧 MECHLOG</span>
+                <span style={{fontSize:10,color:"#333",fontFamily:"'DM Mono',monospace",letterSpacing:".1em"}}>COFIDIS · 2026</span>
+              </div>
+              <div style={{display:"flex",gap:3}}>
+                {["report","log"].map(v => (
+                  <button key={v} className="btn" onClick={() => setView(v)}
+                    style={{padding:"6px 14px",fontSize:11,background:view===v?"#e8a020":"transparent",color:view===v?"#0d0d0d":"#484848",borderRadius:3}}>
+                    {v === "report" ? "📋 Report" : `📊 Log${incidents.length > 0 ? ` (${incidents.length})` : ""}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{maxWidth:620,margin:"0 auto",padding:"22px 14px 90px"}}>
+
+            {/* REPORT FORM */}
+            {view === "report" && status === "idle" && (
+              <div className="su" style={{display:"flex",flexDirection:"column",gap:16}}>
+                <div>
+                  <h1 style={{fontSize:24,fontWeight:800}}>Report Incident</h1>
+                  <p style={{color:"#484848",fontSize:13,marginTop:3}}>Post-race mechanical issue · photo optional</p>
+                </div>
+
+                <div className="field">
+                  <label>Your name</label>
+                  <SelBox value={form.mechanic === "" || MECHANICS.includes(form.mechanic) ? form.mechanic : "Other"} 
+                    onChange={v => setForm(f=>({...f, mechanic: v === "Other" ? "" : v, mechanicOther: v === "Other"}))} 
+                    options={MECHANICS} placeholder="— select your name —" />
+                  {(form.mechanicOther || (!MECHANICS.includes(form.mechanic) && form.mechanic !== "")) && (
+                    <input value={form.mechanic === "" || MECHANICS.slice(0,-1).includes(form.mechanic) ? "" : form.mechanic}
+                      placeholder="Type your name…"
+                      onChange={e => setForm(f=>({...f, mechanic: e.target.value}))}
+                      style={{background:"#161616",border:"1.5px solid #e8a020",color:"#f0ece4",padding:"10px 14px",fontSize:16,borderRadius:4,outline:"none",width:"100%",fontFamily:"'Barlow Condensed',sans-serif",marginTop:6}} />
+                  )}
+                </div>
+
+                <div className="field">
+                  <label>Race</label>
+                  <Autocomplete value={form.race} onChange={v => setForm(f=>({...f,race:v}))} options={RACES} placeholder="Start typing race name…" />
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  <div className="field">
+                    <label>Rider</label>
+                    <Autocomplete value={form.rider} onChange={v => setForm(f=>({...f,rider:v}))} options={RIDERS} placeholder="Start typing…" />
+                  </div>
+                  <div className="field">
+                    <label>Bike</label>
+                    <SelBox value={form.bike} onChange={v => setForm(f=>({...f,bike:v}))} options={BIKES} placeholder="— select —" />
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label>Category</label>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                    {CATEGORIES.map(c => (
+                      <span key={c} className={`chip ${form.category===c?"sel":""}`} onClick={() => setForm(f=>({...f,category:c}))}>{c}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label>Severity</label>
+                  <div style={{display:"flex",gap:7}}>
+                    {SEVERITY.map(s => (
+                      <span key={s} className={`chip ${form.severity===s?"sel":""}`} style={{flex:1,justifyContent:"center"}} onClick={() => setForm(f=>({...f,severity:s}))}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label>Description</label>
+                  <textarea rows={4} placeholder="Describe the problem, when it occurred, what was done…" value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))} />
+                </div>
+
+                <div className="field">
+                  <label>Photo (optional)</label>
+                  <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={handlePhoto} />
+                  <button className="btn" onClick={() => fileRef.current.click()}
+                    style={{padding:"10px 14px",fontSize:13,background:"#141414",color:form.photo?"#e8a020":"#484848",border:"1.5px dashed #252525",borderRadius:4,textAlign:"left"}}>
+                    {form.photo ? `✓  ${form.photo}` : "📷  Add or take a photo"}
+                  </button>
+                  {form.photoPreview && (
+                    <div style={{position:"relative",marginTop:6}}>
+                      <img src={form.photoPreview} alt="preview" style={{width:"100%",borderRadius:4,maxHeight:200,objectFit:"cover"}} />
+                      <button className="btn" onClick={() => setForm(f=>({...f,photo:null,photoFile:null,photoPreview:null}))}
+                        style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,.8)",color:"#bbb",padding:"3px 9px",borderRadius:3,fontSize:11}}>✕ Remove</button>
+                    </div>
+                  )}
+                </div>
+
+                <button className="btn" onClick={handleSubmit}
+                  style={{padding:"14px",fontSize:16,background:isValid?"#e8a020":"#161616",color:isValid?"#0a0a0a":"#333",borderRadius:4,letterSpacing:".06em",cursor:isValid?"pointer":"default"}}>
+                  {isValid ? "SAVE INCIDENT →" : "FILL IN ALL FIELDS TO SAVE"}
+                </button>
+              </div>
+            )}
+
+            {/* Saving */}
+            {view === "report" && status === "saving" && (
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"65vh",gap:16}}>
+                <div style={{width:44,height:44,border:"3px solid #222",borderTop:"3px solid #e8a020",borderRadius:"50%",animation:"spin 0.8s linear infinite"}} />
+                <div style={{fontSize:16,color:"#484848",fontFamily:"'DM Mono',monospace"}}>Saving to database…</div>
+              </div>
+            )}
+
+            {/* Success */}
+            {view === "report" && status === "success" && (
+              <div className="pop" style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"65vh",gap:14,textAlign:"center"}}>
+                <div style={{fontSize:60}}>✅</div>
+                <div style={{fontSize:24,fontWeight:800,color:"#e8a020"}}>Incident Saved</div>
+                <div style={{fontSize:12,color:"#484848",fontFamily:"'DM Mono',monospace"}}>Stored in Supabase · resetting form…</div>
+              </div>
+            )}
+
+            {/* Error */}
+            {view === "report" && status === "error" && (
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"65vh",gap:14,textAlign:"center"}}>
+                <div style={{fontSize:50}}>⚠️</div>
+                <div style={{fontSize:20,fontWeight:800,color:"#e85020"}}>Save Failed</div>
+                <div style={{fontSize:13,color:"#666",fontFamily:"'DM Mono',monospace"}}>{saveError}</div>
+              </div>
+            )}
+
+            {/* LOG */}
+            {view === "log" && (
+              <div className="su" style={{display:"flex",flexDirection:"column",gap:12}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                  <h1 style={{fontSize:24,fontWeight:800}}>Incident Log</h1>
+                  <button className="btn" onClick={fetchIncidents}
+                    style={{padding:"6px 14px",fontSize:11,background:"#141414",color:"#888",border:"1px solid #252525",borderRadius:3}}>
+                    ↻ Refresh
+                  </button>
+                </div>
+
+                {incidents.length > 0 && (
+                  <div style={{display:"flex",gap:8,marginBottom:4}}>
+                    {[["Critical","#e85020",counts.critical],["Moderate","#e8a020",counts.moderate],["Minor","#3db86b",counts.minor]].map(([label,color,count]) => (
+                      <div key={label} style={{flex:1,background:"#141414",border:`1px solid ${color}22`,borderRadius:4,padding:"8px 10px",textAlign:"center"}}>
+                        <div style={{fontSize:20,fontWeight:800,color}}>{count}</div>
+                        <div style={{fontSize:10,color:"#484848",letterSpacing:".1em",fontFamily:"'DM Mono',monospace"}}>{label.toUpperCase()}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {loadStatus === "loading" && (
+                  <div style={{display:"flex",alignItems:"center",gap:10,color:"#484848",fontSize:13,fontFamily:"'DM Mono',monospace",padding:"20px 0"}}>
+                    <div style={{width:16,height:16,border:"2px solid #222",borderTop:"2px solid #e8a020",borderRadius:"50%",animation:"spin 0.8s linear infinite"}} />
+                    Loading from database…
+                  </div>
+                )}
+
+                {loadStatus === "error" && (
+                  <div style={{color:"#e85020",fontSize:13,fontFamily:"'DM Mono',monospace",padding:"10px 0"}}>
+                    ⚠️ Could not load incidents. Check connection.
+                  </div>
+                )}
+
+                {loadStatus === "done" && incidents.length > 0 && (
+                  <input placeholder="🔍  Search race, rider, mechanic, category…"
+                    style={{background:"#141414",border:"1.5px solid #222",color:"#f0ece4",padding:"9px 14px",fontSize:14,borderRadius:4,outline:"none",fontFamily:"'Barlow Condensed',sans-serif",width:"100%",transition:"border-color .2s"}}
+                    onFocus={e => e.target.style.borderColor="#e8a020"} onBlur={e => e.target.style.borderColor="#222"}
+                    value={filter} onChange={e => setFilter(e.target.value)} />
+                )}
+
+                {loadStatus === "done" && incidents.length === 0 && (
+                  <div style={{textAlign:"center",padding:"60px 0"}}>
+                    <div style={{fontSize:40,marginBottom:14,opacity:.1}}>🔧</div>
+                    <div style={{fontSize:16,fontWeight:700,color:"#2a2a2a"}}>No incidents logged yet</div>
+                  </div>
+                )}
+
+                {loadStatus === "done" && filtered.length === 0 && incidents.length > 0 && (
+                  <div style={{textAlign:"center",padding:"20px 0",color:"#383838",fontSize:14}}>No results for "{filter}"</div>
+                )}
+
+                {loadStatus === "done" && filtered.map(inc => (
+                  <div key={inc.id} className="card" style={{borderColor:detail?.id===inc.id?"#2a2a2a":"#1e1e1e"}}
+                    onClick={() => setDetail(detail?.id===inc.id?null:inc)}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                      <div style={{flex:1}}>
+                        <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap",marginBottom:5}}>
+                          <span style={{fontWeight:800,fontSize:16}}>{inc.rider}</span>
+                          <span className="badge" style={{background:"#1a1a1a",color:"#666"}}>{inc.category}</span>
+                          <span style={{width:7,height:7,borderRadius:"50%",background:sevColor(inc.severity),display:"inline-block",flexShrink:0}} />
+                        </div>
+                        <div style={{fontSize:12,color:"#484848",fontFamily:"'DM Mono',monospace",marginBottom:3}}>
+                          {inc.race}{inc.bike ? `  ·  ${inc.bike}` : ""}
+                        </div>
+                        <div style={{fontSize:11,color:"#333",fontFamily:"'DM Mono',monospace"}}>
+                          📅 {new Date(inc.created_at).toLocaleString("en-GB")}
+                          {inc.mechanic ? `  ·  👤 ${inc.mechanic}` : ""}
+                        </div>
+                      </div>
+                      <span style={{color:"#2a2a2a",fontSize:18,display:"inline-block",transform:detail?.id===inc.id?"rotate(90deg)":"none",transition:"transform .2s",flexShrink:0}}>›</span>
+                    </div>
+                    {detail?.id === inc.id && (
+                      <div style={{marginTop:12,borderTop:"1px solid #1a1a1a",paddingTop:12,display:"flex",flexDirection:"column",gap:10}}>
+                        <p style={{fontSize:14,lineHeight:1.6,color:"#aaa"}}>{inc.description}</p>
+                        {inc.photo_url && (
+                          <img src={inc.photo_url} alt="incident" style={{width:"100%",borderRadius:4,maxHeight:240,objectFit:"cover"}}
+                            onError={e => e.target.style.display="none"} />
+                        )}
+                        <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+                          <span className="badge" style={{background:`${sevColor(inc.severity)}15`,color:sevColor(inc.severity),border:`1px solid ${sevColor(inc.severity)}30`}}>{inc.severity}</span>
+                          {inc.photo_url && <span className="badge" style={{background:"#1a1a1a",color:"#484848"}}>📷 photo</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Status bar */}
+          <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#0a0a0a",borderTop:"1px solid #141414",padding:"8px 16px"}}>
+            <div style={{maxWidth:620,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:10,color:"#2a2a2a",fontFamily:"'DM Mono',monospace",letterSpacing:".06em"}}>
+              <div style={{display:"flex",alignItems:"center",gap:7}}>
+                <span style={{color:"#3db86b",animation:"pulse 2.5s infinite"}}>●</span>
+                LIVE · SUPABASE
+              </div>
+              <div>{incidents.length} INCIDENT{incidents.length!==1?"S":""} TOTAL</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
