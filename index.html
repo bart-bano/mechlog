@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>MechLog · Cofidis 2026</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    :root {
+      --red:#E30613; --red-bg:#fde8e9;
+      --bg:#f4f4f5; --surface:#fff; --border:#e0e0e3;
+      --text:#111; --mid:#555; --muted:#999;
+      --green:#16a34a; --green-bg:#dcfce7;
+      --orange:#d97706; --orange-bg:#fef3c7;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:var(--bg);color:var(--text);font-family:'Barlow Condensed',sans-serif}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--red);border-radius:2px}
+    .btn{cursor:pointer;border:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+    .btn:active{transform:scale(.97)}
+    .inp{background:var(--surface);border:2px solid var(--border);color:var(--text);padding:10px 12px;font-size:15px;border-radius:6px;outline:none;width:100%;font-family:'Barlow Condensed',sans-serif;transition:border-color .15s}
+    .inp:focus{border-color:var(--red)}
+    .inp::placeholder{color:#ccc}
+    textarea.inp{resize:vertical;min-height:72px;font-size:14px}
+    select.inp.empty{color:#ccc}
+    .chip{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--border);background:var(--surface);color:var(--mid);transition:all .12s;text-transform:uppercase;user-select:none}
+    .chip:hover{border-color:#bbb;color:var(--text)}
+    .chip.sel{border-color:var(--red);background:var(--red);color:#fff}
+    .chip.sel-minor{border-color:var(--green);background:var(--green);color:#fff}
+    .chip.sel-moderate{border-color:var(--orange);background:var(--orange);color:#fff}
+    .chip.sel-critical{border-color:var(--red);background:var(--red);color:#fff}
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;font-size:11px;font-weight:700;letter-spacing:.05em;border-radius:20px;text-transform:uppercase}
+    .badge-minor{background:var(--green-bg);color:var(--green)}
+    .badge-moderate{background:var(--orange-bg);color:var(--orange)}
+    .badge-critical{background:var(--red-bg);color:var(--red)}
+    .badge-cat{background:#f0f0f2;color:var(--mid)}
+    .icard{background:var(--surface);border:2px solid var(--border);border-radius:10px;transition:border-color .15s}
+    .icard.valid{border-color:#16a34a44}
+    .icard-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fafafa;border-bottom:2px solid var(--border);cursor:pointer;user-select:none;border-radius:8px 8px 0 0}
+    .icard-body{padding:14px;display:flex;flex-direction:column;gap:12px}
+    .field{display:flex;flex-direction:column;gap:5px}
+    .field label{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--mid);text-transform:uppercase}
+    .logcard{background:var(--surface);border:2px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+    .logcard:hover{border-color:#ccc;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .su{animation:slideUp .2s ease}
+    @keyframes pop{0%{transform:scale(.8);opacity:0}65%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+    .pop{animation:pop .3s ease forwards}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .nav-tab{padding:7px 14px;font-size:11px;border-radius:5px;letter-spacing:.05em}
+    .tab-pill{padding:7px 16px;font-size:12px;font-weight:700;border-radius:20px;cursor:pointer;border:2px solid transparent;transition:all .15s;text-transform:uppercase;letter-spacing:.05em;font-family:'Barlow Condensed',sans-serif}
+    .tab-pill.active{background:var(--red);color:#fff;border-color:var(--red)}
+    .tab-pill:not(.active){background:#fff;color:var(--mid);border-color:var(--border)}
+    .tab-pill:not(.active):hover{border-color:#bbb;color:var(--text)}
+    .group-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8f8f9;border:2px solid var(--border);border-radius:8px;cursor:pointer;user-select:none;transition:background .15s}
+    .group-header:hover{background:#f0f0f2}
+    .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { useState, useRef, useEffect, useCallback } = React;
+
+  const SUPA_URL = "https://egtthghehjadqyckpxpe.supabase.co";
+  const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVndHRoZ2hlaGphZHF5Y2tweHBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTcxMzMsImV4cCI6MjA4ODI3MzEzM30.9ciGSPspGIbUBTAxkSIP1AnN5fcl_YoHnqfEwwaiXCk";
+  const H = { "apikey":SUPA_KEY, "Authorization":`Bearer ${SUPA_KEY}`, "Content-Type":"application/json" };
+  const DASHBOARD_PASSWORD = "cofidis2026";
+
+  const RIDERS = ["Alex Aranburu","Alex Kirsch","Alexis Renard","Benjamin Thomas","Bryan Coquard","Camille Charret","Clement Izquierdo","Damien Touze","Dylan Teuns","Edoardo Zamperini","Emanuel Buchmann","Hugo Page","Ion Izagirre","Jan Maas","Janie Meehan","Jenthe Biermans","Louis Rouland","Ludovic Robeet","Milan Fretin","Nicolas Debeaumarche","Oliver Knight","Paul Ourselin","Piet Allegaert","Sam Maisonobe","Sergio Samitier","Simon Carr","Stan Aniolkowski","Sylvain Moniquet","Valentin Ferron","Yael Joalland","Other"];
+  const RACES = ["4 Jours de Dunkerque","ADAC Cyclassics","AlUla Tour","Amstel Gold Race","Andorra MoraBanc Clàssica","Antwerp Port Epic / Sels Trophy","Baloise Belgium Tour","Binche - Chimay - Binche","Boucles de l'Aulne - Châteaulin","Boucles de la Mayenne","Bredene Koksijde Classic","Bretagne Classic - Ouest-France","Brussels Cycling Classic","Cholet Agglo Tour","Chrono des Nations","Circuit Franco-Belge","Circuito de Getxo","Clasica de Almeria","Classic Grand Besançon Doubs","Classic Var","Classic Velox - Adélie de Vitré","Classica Camp de Morvedre","Clàssica Comunitat Valenciana","Copenhagen Sprint","Coppa Agostoni - Giro delle Brianze","Coppa Bernocchi - GP Banco BPM","DSSK Donostia San Sebastian","Danilith Nokere Koerse","De Brabantse Pijl","Dwars door Vlaanderen","Ename Samyn Classic","Eschborn-Frankfurt","Etoile de Bessèges - Tour du Gard","Faun Drome Classic","Faun-Ardèche Classic","Figueira Champions Classic","GP de Fourmies","GP Emilia","GP Industria & Artigianato","Giro del Veneto","Giro della Toscana","Gran Piemonte","Gran Premio Castellón","Gran Premio Miguel Indurain","Gran Premio Coppa Sabatini","Grand Prix Criquielion","Grand Prix de Marseille La Marseillaise","Grand Prix d'Isbergues","Grand Prix de Denain","Grand Prix de Wallonie","Grand Prix du Morbihan","Grote prijs Jean-Pierre Monseré","Heylen Vastgoed Heistse Pijl","Il Lombardia","In Flanders Fields - Middelkerke to Wevelgem","Itzulia Basque Country","Kuurne - Brussel - Kuurne","La Flèche Wallonne","La Polynormande","La Route d'Occitanie","La Vuelta Ciclista a España","Lidl Deutschland Tour","Liège-Bastogne-Liège","Memorial Marco Pantani","Mercan'Tour Classic Alpes-Maritimes","Milano - Torino","Milano-Sanremo","Muscat Classic","Omloop Nieuwsblad","Paris - Camembert","Paris - Tours","Paris-Chauny","Paris-Nice","Paris-Roubaix","Presidential Cycling Tour of Turkiye","Ronde Van Brugge - Tour of Bruges","Ronde van Limburg","Ronde van Vlaanderen","Région Pays de la Loire Tour","SUPER 8 Classic","Scheldeprijs","Settimana Internazionale Coppi e Bartali","Sparkassen Münsterland Giro","Tour Auvergne - Rhône-Alpes","Tour Poitou - Charentes","Tour de France","Tour de Hongrie","Tour de l'Ain","Tour de la Provence","Tour des Alpes-Maritimes","Tour du Finistère","Tour du Jura Cycliste","Tour du Limousin-Périgord","Tour of Binzhou","Tour of Guangxi","Tour of Huangshan","Tour of Oman","Tour of Taihu Lake","Tre Valli Varesine","Tro-Bro Léon","Trofeo Laigueglia","Trofeo Matteotti","Veneto Classic","Vuelta a Andalucia","Vuelta a Burgos","Training"];
+  const BIKES = ["Race Bike Home","Race Bike 1","Race Bike 2","Race Bike 3","TT Bike 1","TT Bike 2","Other"];
+  const CATS = ["Derailleur","Brakes","Wheel / Tyre","Chain / Drivetrain","Handlebar / Stem","Saddle / Seatpost","Pedals / Crankset","Electronics / Di2","Frame / Fork","Other"];
+  const SEVS = ["🟢 Minor","🟡 Moderate","🔴 Critical"];
+  const MECHANICS = ["ANSARD Alexis","CITOULA Fernando","SOBOLEWSKI Florent","DANIEL Nicolas","LAURANCE Franck","MOISAN Killian","MAINGUENAUD Mickael","ZAMAGNA Vincenzo","ROBERT Franck","MICHELUSI Mattia","WYPELIER Alexandre","VERSTRAETE Jeanick","GAUTHIER Marc-Antoine","Other"];
+
+  const newEntry = (id) => ({ id, race:"", rider:"", riderOther:false, bike:"", category:[], cause:"", severity:"", description:"", photoFile:null, photoPreview:null, open:true });
+  const isEntryValid = (e) => e.rider && e.category.length > 0 && e.cause && e.severity && e.description.trim().length > 0;
+  const sevClass = (s) => s?.includes("Critical")?"badge-critical":s?.includes("Moderate")?"badge-moderate":"badge-minor";
+  const sevLabel = (s) => s?.replace(/[🟢🟡🔴]\s?/,"") || "";
+  const sevColor = (s) => s?.includes("Critical")?"#E30613":s?.includes("Moderate")?"#d97706":"#16a34a";
+
+  function AC({ value, onChange, options, placeholder }) {
+    const [open, setOpen] = useState(false);
+    const [q, setQ] = useState(value);
+    useEffect(() => { if (!value) setQ(""); }, [value]);
+    const filtered = q.length > 0 ? options.filter(o => o.toLowerCase().includes(q.toLowerCase())).slice(0,7) : [];
+    const pick = (v) => { setQ(v); onChange(v); setOpen(false); };
+    return (
+      <div style={{position:"relative"}}>
+        <input value={q} placeholder={placeholder} className="inp"
+          onChange={e => { setQ(e.target.value); onChange(""); setOpen(true); }}
+          onFocus={e => { setOpen(true); e.target.style.borderColor="#E30613"; }}
+          onBlur={e => { setTimeout(()=>setOpen(false),160); e.target.style.borderColor=value?"#E30613":"#e0e0e3"; }} />
+        {open && filtered.length > 0 && (
+          <div style={{position:"absolute",top:"calc(100% + 2px)",left:0,right:0,background:"#fff",border:"2px solid #E30613",borderRadius:6,zIndex:400,boxShadow:"0 6px 20px rgba(0,0,0,.12)",maxHeight:220,overflowY:"auto"}}>
+            {filtered.map(o => (
+              <div key={o} onMouseDown={()=>pick(o)}
+                style={{padding:"9px 12px",fontSize:14,cursor:"pointer",borderBottom:"1px solid #f0f0f2",color:"#111",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:600}}
+                onMouseEnter={e=>{e.currentTarget.style.background="#fde8e9";e.currentTarget.style.color="#E30613";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#111";}}>
+                {o}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function Sel({ value, onChange, options, placeholder }) {
+    return (
+      <select value={value}
+        onChange={e=>onChange(e.target.value)}
+        onBlur={e=>{ if(e.target.value) onChange(e.target.value); }}
+        onClick={e=>e.stopPropagation()}
+        className={`inp ${!value?"empty":""}`}
+        style={{WebkitAppearance:"menulist",appearance:"menulist"}}>
+        <option value="">{placeholder}</option>
+        {options.map(o=><option key={o} value={o}>{o}</option>)}
+      </select>
+    );
+  }
+
+  function IncidentCard({ entry, idx, total, onChange, onRemove, onToggle, sharedRace }) {
+    const valid = isEntryValid(entry);
+    const fileRef = useRef();
+    const handlePhoto = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => onChange({ photoFile:file, photoPreview:ev.target.result });
+      reader.readAsDataURL(file);
+    };
+    return (
+      <div className={`icard ${valid?"valid":""}`} style={{borderColor:valid?"#16a34a55":entry.open?"#E30613":"#e0e0e3"}}>
+        <div className="icard-head" onClick={onToggle} style={{background:valid?"#f0fdf4":entry.open?"#fff8f8":"#fafafa"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:26,height:26,borderRadius:"50%",background:valid?"#16a34a":"#e0e0e3",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,flexShrink:0}}>
+              {valid?"✓":idx+1}
+            </div>
+            <div>
+              {entry.rider||entry.race
+                ? <span style={{fontWeight:800,fontSize:15}}>{entry.rider||"?"}<span style={{color:"#888",fontWeight:600}}>{entry.category.length>0?` · ${entry.category[0]}${entry.category.length>1?` +${entry.category.length-1}`:""}`:""}</span></span>
+                : <span style={{color:"#bbb",fontSize:14,fontWeight:600}}>Incident {idx+1} — fill in below</span>}
+              {entry.severity && <span className={`badge ${sevClass(entry.severity)}`} style={{marginLeft:8,fontSize:10}}>{sevLabel(entry.severity)}</span>}
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            {total > 1 && <button className="btn" onClick={e=>{e.stopPropagation();onRemove();}} style={{padding:"3px 9px",fontSize:12,background:"#fde8e9",color:"#E30613",borderRadius:4}}>✕</button>}
+            <span style={{color:"#bbb",fontSize:18,transform:entry.open?"rotate(90deg)":"none",transition:"transform .2s"}}>›</span>
+          </div>
+        </div>
+        {entry.open && (
+          <div className="icard-body" onClick={e=>e.stopPropagation()}>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div className="field">
+                <label>Rider</label>
+                <Sel value={RIDERS.slice(0,-1).includes(entry.rider)?entry.rider:(entry.riderOther?"Other":"")}
+                  onChange={v=>{
+                    if(v==="Other"){onChange({rider:"",riderOther:true});}
+                    else{onChange({rider:v,riderOther:false});}
+                  }}
+                  options={RIDERS} placeholder="— select rider —" />
+                {entry.riderOther && (
+                  <input className="inp" value={entry.rider} placeholder="Type rider name…"
+                    style={{borderColor:"#E30613",marginTop:6}}
+                    onClick={e=>e.stopPropagation()}
+                    onChange={e=>onChange({rider:e.target.value})} />
+                )}
+              </div>
+              <div className="field"><label>Bike</label><Sel value={entry.bike} onChange={v=>onChange({bike:v})} options={BIKES} placeholder="— select —" /></div>
+            </div>
+            <div className="field">
+              <label>Category <span style={{color:"#bbb",fontWeight:400,textTransform:"none",letterSpacing:0}}>— select one or more</span></label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {CATS.map(c=>{
+                  const sel = entry.category.includes(c);
+                  return <span key={c} className={`chip ${sel?"sel":""}`}
+                    onClick={()=>onChange({category: sel ? entry.category.filter(x=>x!==c) : [...entry.category,c]})}>{c}</span>;
+                })}
+              </div>
+              {entry.category.length > 1 && (
+                <div style={{fontSize:12,color:"#E30613",fontWeight:700,marginTop:2}}>{entry.category.length} categories selected</div>
+              )}
+            </div>
+            <div className="field">
+              <label>Cause</label>
+              <div style={{display:"flex",gap:8}}>
+                {[["💥 Crash / Fall","crash"],["⚙️ Technical","technical"]].map(([label,val])=>(
+                  <span key={val} className={`chip ${entry.cause===val?"sel":""}`}
+                    style={{flex:1,justifyContent:"center",padding:"10px 8px",fontSize:14}}
+                    onClick={()=>onChange({cause:val})}>
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>Severity</label>
+              <div style={{display:"flex",gap:7}}>
+                {[["🟢 Minor","sel-minor"],["🟡 Moderate","sel-moderate"],["🔴 Critical","sel-critical"]].map(([s,cls])=>(
+                  <span key={s} className={`chip ${entry.severity===s?cls:""}`} style={{flex:1,padding:"9px 4px",fontSize:13}} onClick={()=>onChange({severity:s})}>{s}</span>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label>Description</label>
+              <textarea className="inp" rows={3} placeholder="What happened, when, what was done…" value={entry.description} onClick={e=>e.stopPropagation()} onChange={e=>onChange({description:e.target.value})} />
+            </div>
+            <div className="field">
+              <label>Photo (optional)</label>
+              <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhoto} />
+              <button className="btn" onClick={()=>fileRef.current.click()}
+                style={{padding:"9px 12px",fontSize:13,background:entry.photoFile?"#fde8e9":"#f4f4f5",color:entry.photoFile?"#E30613":"#999",border:`2px dashed ${entry.photoFile?"#E30613":"#ddd"}`,borderRadius:6,textAlign:"left",fontWeight:600}}>
+                {entry.photoFile?`✓  ${entry.photoFile.name}`:"📷  Add photo"}
+              </button>
+              {entry.photoPreview && (
+                <div style={{position:"relative",marginTop:6}}>
+                  <img src={entry.photoPreview} style={{width:"100%",borderRadius:6,maxHeight:160,objectFit:"cover",border:"2px solid #e0e0e3"}} />
+                  <button className="btn" onClick={()=>onChange({photoFile:null,photoPreview:null})} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",color:"#fff",padding:"3px 8px",borderRadius:4,fontSize:11}}>✕</button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── DASHBOARD ──
+  function Dashboard({ incidents, onDelete, onEdit }) {
+    const [authed, setAuthed] = useState(false);
+    const [pw, setPw] = useState("");
+    const [pwErr, setPwErr] = useState(false);
+    const [groupBy, setGroupBy] = useState("race");
+    const [openGroups, setOpenGroups] = useState({});
+    const [lightbox, setLightbox] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState(null); // incident to delete
+    const [editInc, setEditInc] = useState(null); // incident being edited
+    const [editForm, setEditForm] = useState({});
+    const [actionStatus, setActionStatus] = useState("idle"); // idle|saving|error
+
+    const tryLogin = () => {
+      if (pw === DASHBOARD_PASSWORD) { setAuthed(true); setPwErr(false); }
+      else { setPwErr(true); setTimeout(()=>setPwErr(false),2000); }
+    };
+
+    const startEdit = (inc) => {
+      setEditInc(inc);
+      setEditForm({
+        rider: inc.rider||"", bike: inc.bike||"", race: inc.race||"",
+        category: inc.category||"", cause: inc.cause||"",
+        severity: inc.severity||"", description: inc.description||"",
+        mechanic: inc.mechanic||""
+      });
+    };
+
+    const saveEdit = async () => {
+      setActionStatus("saving");
+      try {
+        const res = await fetch(`${SUPA_URL}/rest/v1/incidents?id=eq.${editInc.id}`, {
+          method: "PATCH",
+          headers: { ...H, "Prefer": "return=representation" },
+          body: JSON.stringify(editForm)
+        });
+        if (!res.ok) throw new Error();
+        await onEdit();
+        setEditInc(null);
+        setActionStatus("idle");
+      } catch { setActionStatus("error"); setTimeout(()=>setActionStatus("idle"),2000); }
+    };
+
+    const confirmDelete = async () => {
+      setActionStatus("saving");
+      try {
+        const res = await fetch(`${SUPA_URL}/rest/v1/incidents?id=eq.${deleteConfirm.id}`, {
+          method: "DELETE", headers: H
+        });
+        if (!res.ok) throw new Error();
+        await onDelete(deleteConfirm.id);
+        setDeleteConfirm(null);
+        setActionStatus("idle");
+      } catch { setActionStatus("error"); setTimeout(()=>setActionStatus("idle"),2000); }
+    };
+
+    if (!authed) return (
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:16,padding:20}}>
+        <div style={{width:64,height:64,background:"#fde8e9",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>🔒</div>
+        <div style={{fontSize:22,fontWeight:800,color:"#111"}}>Dashboard Access</div>
+        <div style={{fontSize:14,color:"#888",textAlign:"center"}}>This view is restricted to team management</div>
+        <div style={{width:"100%",maxWidth:300,display:"flex",flexDirection:"column",gap:10}}>
+          <input className="inp" type="password" placeholder="Enter password…" value={pw}
+            onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&tryLogin()}
+            style={{borderColor:pwErr?"#E30613":"#e0e0e3",fontSize:16,textAlign:"center",letterSpacing:".1em"}} />
+          {pwErr && <div style={{color:"#E30613",fontSize:13,textAlign:"center",fontWeight:700}}>Incorrect password</div>}
+          <button className="btn" onClick={tryLogin} style={{padding:"12px",fontSize:15,background:"#E30613",color:"#fff",borderRadius:6}}>ENTER →</button>
+        </div>
+      </div>
+    );
+
+    const groups = {};
+    incidents.forEach(inc => {
+      const key = groupBy==="race" ? (inc.race||"Unknown race") : groupBy==="rider" ? (inc.rider||"Unknown rider") : (inc.category||"Unknown category");
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(inc);
+    });
+    const sortedKeys = Object.keys(groups).sort((a,b) => groups[b].length - groups[a].length);
+    const toggleGroup = (k) => setOpenGroups(prev=>({...prev,[k]:!prev[k]}));
+    const critCount = (arr) => arr.filter(i=>i.severity?.includes("Critical")).length;
+    const modCount = (arr) => arr.filter(i=>i.severity?.includes("Moderate")).length;
+
+    return (
+      <div className="su" style={{display:"flex",flexDirection:"column",gap:16}}>
+
+        {/* Lightbox */}
+        {lightbox && (
+          <div onClick={()=>setLightbox(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+            <img src={lightbox} style={{maxWidth:"100%",maxHeight:"90vh",borderRadius:8}} onClick={e=>e.stopPropagation()} />
+            <button onClick={()=>setLightbox(null)} style={{position:"fixed",top:20,right:20,background:"rgba(255,255,255,.15)",border:"none",color:"#fff",width:40,height:40,borderRadius:"50%",fontSize:20,cursor:"pointer"}}>✕</button>
+          </div>
+        )}
+
+        {/* Delete confirm modal */}
+        {deleteConfirm && (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:900,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+            <div style={{background:"#fff",borderRadius:12,padding:24,maxWidth:340,width:"100%",display:"flex",flexDirection:"column",gap:16}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#111"}}>Delete incident?</div>
+              <div style={{fontSize:14,color:"#555"}}>
+                <strong>{deleteConfirm.rider}</strong> · {deleteConfirm.race}<br/>
+                <span style={{color:"#888"}}>{deleteConfirm.category}</span>
+              </div>
+              <div style={{fontSize:13,color:"#E30613",fontWeight:700}}>This cannot be undone.</div>
+              <div style={{display:"flex",gap:10}}>
+                <button className="btn" onClick={()=>setDeleteConfirm(null)}
+                  style={{flex:1,padding:"11px",fontSize:14,background:"#f0f0f2",color:"#555",borderRadius:6}}>Cancel</button>
+                <button className="btn" onClick={confirmDelete} disabled={actionStatus==="saving"}
+                  style={{flex:1,padding:"11px",fontSize:14,background:"#E30613",color:"#fff",borderRadius:6}}>
+                  {actionStatus==="saving"?"Deleting…":"Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit modal */}
+        {editInc && (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:900,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}}>
+            <div style={{background:"#fff",borderRadius:12,padding:20,maxWidth:500,width:"100%",display:"flex",flexDirection:"column",gap:14,maxHeight:"90vh",overflowY:"auto"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{fontSize:18,fontWeight:800,color:"#111"}}>Edit Incident</div>
+                <button className="btn" onClick={()=>setEditInc(null)} style={{background:"none",color:"#aaa",fontSize:20,padding:"0 4px",textTransform:"none",letterSpacing:0}}>✕</button>
+              </div>
+
+              {[["Rider","rider"],["Race","race"],["Bike","bike"],["Mechanic","mechanic"]].map(([label,key])=>(
+                <div className="field" key={key}>
+                  <label>{label}</label>
+                  <input className="inp" value={editForm[key]} onChange={e=>setEditForm(f=>({...f,[key]:e.target.value}))} />
+                </div>
+              ))}
+
+              <div className="field">
+                <label>Category</label>
+                <input className="inp" value={editForm.category} onChange={e=>setEditForm(f=>({...f,category:e.target.value}))} />
+              </div>
+
+              <div className="field">
+                <label>Cause</label>
+                <div style={{display:"flex",gap:8}}>
+                  {[["💥 Crash / Fall","crash"],["⚙️ Technical","technical"]].map(([label,val])=>(
+                    <span key={val} className={`chip ${editForm.cause===val?"sel":""}`}
+                      style={{flex:1,justifyContent:"center",padding:"9px 8px",fontSize:13}}
+                      onClick={()=>setEditForm(f=>({...f,cause:val}))}>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field">
+                <label>Severity</label>
+                <div style={{display:"flex",gap:7}}>
+                  {[["🟢 Minor","sel-minor"],["🟡 Moderate","sel-moderate"],["🔴 Critical","sel-critical"]].map(([s,cls])=>(
+                    <span key={s} className={`chip ${editForm.severity===s?cls:""}`}
+                      style={{flex:1,padding:"9px 4px",fontSize:12,justifyContent:"center"}}
+                      onClick={()=>setEditForm(f=>({...f,severity:s}))}>
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field">
+                <label>Description</label>
+                <textarea className="inp" rows={4} value={editForm.description} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} />
+              </div>
+
+              {actionStatus==="error" && <div style={{color:"#E30613",fontSize:13,fontWeight:700}}>⚠️ Could not save. Check connection.</div>}
+
+              <div style={{display:"flex",gap:10}}>
+                <button className="btn" onClick={()=>setEditInc(null)}
+                  style={{flex:1,padding:"12px",fontSize:14,background:"#f0f0f2",color:"#555",borderRadius:6}}>Cancel</button>
+                <button className="btn" onClick={saveEdit} disabled={actionStatus==="saving"}
+                  style={{flex:1,padding:"12px",fontSize:14,background:"#E30613",color:"#fff",borderRadius:6}}>
+                  {actionStatus==="saving"?"Saving…":"Save changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div style={{borderLeft:"4px solid #E30613",paddingLeft:14}}>
+          <h1 style={{fontSize:26,fontWeight:800}}>Dashboard</h1>
+          <p style={{color:"#888",fontSize:13,marginTop:2}}>{incidents.length} incidents total</p>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+          {[["Critical","#E30613","#fde8e9",incidents.filter(i=>i.severity?.includes("Critical")).length],
+            ["Moderate","#d97706","#fef3c7",incidents.filter(i=>i.severity?.includes("Moderate")).length],
+            ["Minor","#16a34a","#dcfce7",incidents.filter(i=>i.severity?.includes("Minor")).length]
+          ].map(([l,c,bg,n])=>(
+            <div key={l} style={{background:bg,border:`2px solid ${c}33`,borderRadius:8,padding:"12px 10px",textAlign:"center"}}>
+              <div style={{fontSize:28,fontWeight:800,color:c,lineHeight:1}}>{n}</div>
+              <div style={{fontSize:10,color:c,letterSpacing:".1em",fontFamily:"'DM Mono',monospace",marginTop:2,fontWeight:700}}>{l.toUpperCase()}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:12,color:"#888",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase"}}>Group by:</span>
+          {[["race","🏁 Race"],["rider","🚴 Rider"],["category","🔧 Problem type"]].map(([v,l])=>(
+            <button key={v} className={`tab-pill ${groupBy===v?"active":""}`} onClick={()=>setGroupBy(v)}>{l}</button>
+          ))}
+        </div>
+
+        {incidents.length===0 && (
+          <div style={{textAlign:"center",padding:"40px 0",color:"#ccc"}}>
+            <div style={{fontSize:40,opacity:.2,marginBottom:12}}>📊</div>
+            <div style={{fontSize:16,fontWeight:700}}>No incidents yet</div>
+          </div>
+        )}
+
+        {sortedKeys.map(key => {
+          const items = groups[key];
+          const open = openGroups[key] !== false;
+          const crit = critCount(items);
+          const mod = modCount(items);
+          const hasPhotos = items.some(i=>i.photo_url);
+          return (
+            <div key={key} style={{display:"flex",flexDirection:"column",borderRadius:8,overflow:"hidden",border:"2px solid #e0e0e3"}}>
+              <div className="group-header" onClick={()=>toggleGroup(key)}>
+                <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0}}>
+                  <span style={{fontWeight:800,fontSize:16,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{key}</span>
+                  <span style={{background:"#f0f0f2",color:"#555",borderRadius:20,padding:"2px 9px",fontSize:11,fontWeight:700,flexShrink:0}}>{items.length}</span>
+                  {crit>0 && <span style={{background:"#fde8e9",color:"#E30613",borderRadius:20,padding:"2px 9px",fontSize:11,fontWeight:700,flexShrink:0}}>🔴 {crit}</span>}
+                  {mod>0 && <span style={{background:"#fef3c7",color:"#d97706",borderRadius:20,padding:"2px 9px",fontSize:11,fontWeight:700,flexShrink:0}}>🟡 {mod}</span>}
+                  {hasPhotos && <span style={{fontSize:13,flexShrink:0}}>📷</span>}
+                </div>
+                <span style={{color:"#bbb",fontSize:20,transform:open?"rotate(90deg)":"none",transition:"transform .2s",flexShrink:0}}>›</span>
+              </div>
+
+              {open && (
+                <div style={{background:"#fff",borderTop:"2px solid #f0f0f2"}}>
+                  {items.map((inc,i)=>(
+                    <div key={inc.id} style={{padding:"12px 14px",borderBottom:i<items.length-1?"1px solid #f0f0f2":"none"}}>
+                      <div style={{display:"flex",gap:8,alignItems:"flex-start",justifyContent:"space-between"}}>
+                        <div style={{flex:1}}>
+                          <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap",marginBottom:5}}>
+                            <span style={{fontWeight:800,fontSize:16}}>{inc.rider}</span>
+                            {groupBy==="race"
+                              ? <span className="badge badge-cat">{inc.category}</span>
+                              : groupBy==="rider"
+                              ? <span style={{fontSize:13,color:"#888",fontFamily:"'DM Mono',monospace"}}>{inc.race}</span>
+                              : <span style={{fontSize:13,color:"#888",fontFamily:"'DM Mono',monospace"}}>{inc.race}</span>}
+                            <span className={`badge ${sevClass(inc.severity)}`}>{sevLabel(inc.severity)}</span>
+                            {inc.cause && <span style={{background:"#f0f0f2",color:"#555",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>{inc.cause==="crash"?"💥 Crash":"⚙️ Technical"}</span>}
+                          </div>
+                          {inc.bike && <div style={{fontSize:12,color:"#888",marginBottom:4,fontFamily:"'DM Mono',monospace"}}>🚲 {inc.bike}</div>}
+                          <p style={{fontSize:14,color:"#333",lineHeight:1.5,marginBottom:6}}>{inc.description}</p>
+                          <div style={{fontSize:11,color:"#bbb",fontFamily:"'DM Mono',monospace",marginBottom:8}}>
+                            📅 {new Date(inc.created_at).toLocaleString("en-GB")}
+                            {inc.mechanic?`  ·  👤 ${inc.mechanic}`:""}
+                          </div>
+                          {/* Action buttons */}
+                          <div style={{display:"flex",gap:7}}>
+                            <button className="btn" onClick={()=>startEdit(inc)}
+                              style={{padding:"5px 12px",fontSize:11,background:"#f0f0f2",color:"#444",borderRadius:4}}>
+                              ✏️ Edit
+                            </button>
+                            <button className="btn" onClick={()=>setDeleteConfirm(inc)}
+                              style={{padding:"5px 12px",fontSize:11,background:"#fde8e9",color:"#E30613",borderRadius:4}}>
+                              🗑 Delete
+                            </button>
+                          </div>
+                        </div>
+                        {inc.photo_url && (
+                          <img src={inc.photo_url} alt="photo"
+                            onClick={()=>setLightbox(inc.photo_url)}
+                            style={{width:72,height:72,objectFit:"cover",borderRadius:6,border:"2px solid #e0e0e3",cursor:"zoom-in",flexShrink:0}}
+                            onError={e=>e.target.style.display="none"} />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ── MAIN APP ──
+  function App() {
+    const [view, setView] = useState("report");
+    const [race, setRace] = useState("");
+    const [mechanic, setMechanic] = useState("");
+    const [mechanicOther, setMechanicOther] = useState(false);
+    const [entries, setEntries] = useState([newEntry(1)]);
+    const [nextId, setNextId] = useState(2);
+    const [status, setStatus] = useState("idle");
+    const [saveError, setSaveError] = useState("");
+    const [savedCount, setSavedCount] = useState(0);
+    const [incidents, setIncidents] = useState([]);
+    const [loadStatus, setLoadStatus] = useState("idle");
+    const [filter, setFilter] = useState("");
+    const [detail, setDetail] = useState(null);
+
+    const fetchIncidents = useCallback(async () => {
+      setLoadStatus("loading");
+      try {
+        const res = await fetch(`${SUPA_URL}/rest/v1/incidents?select=*&order=created_at.desc`, { headers: H });
+        if (!res.ok) throw new Error();
+        setIncidents(await res.json()); setLoadStatus("done");
+      } catch { setLoadStatus("error"); }
+    }, []);
+
+    useEffect(() => { if (view==="log"||view==="dashboard") fetchIncidents(); }, [view]);
+
+    const addEntry = () => { setEntries(prev=>[...prev.map(e=>({...e,open:false})),newEntry(nextId)]); setNextId(n=>n+1); };
+    const updateEntry = (id,patch) => setEntries(prev=>prev.map(e=>e.id===id?{...e,...patch}:e));
+    const removeEntry = (id) => setEntries(prev=>prev.filter(e=>e.id!==id));
+    const toggleEntry = (id) => setEntries(prev=>prev.map(e=>e.id===id?{...e,open:!e.open}:e));
+
+    const validEntries = entries.filter(isEntryValid);
+    const allValid = entries.length > 0 && entries.every(isEntryValid) && race && mechanic.trim().length > 0;
+
+    const uploadPhoto = async (file) => {
+      const ext = file.name.split(".").pop();
+      const fn = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const res = await fetch(`${SUPA_URL}/storage/v1/object/photos/${fn}`, {
+        method:"POST", headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":file.type}, body:file
+      });
+      if (!res.ok) throw new Error();
+      return `${SUPA_URL}/storage/v1/object/public/photos/${fn}`;
+    };
+
+    const handleSubmit = async () => {
+      if (!allValid) return;
+      setStatus("saving"); setSaveError("");
+      try {
+        const payloads = await Promise.all(entries.map(async e => {
+          let photo_url = null;
+          if (e.photoFile) { try { photo_url = await uploadPhoto(e.photoFile); } catch {} }
+          return { race, rider:e.rider, bike:e.bike||null, category:e.category.join(", "), cause:e.cause, severity:e.severity, description:e.description, mechanic, photo_url };
+        }));
+        const res = await fetch(`${SUPA_URL}/rest/v1/incidents`, {
+          method:"POST", headers:{...H,"Prefer":"return=representation"}, body:JSON.stringify(payloads)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        setSavedCount(entries.length); setStatus("success");
+        setTimeout(()=>{ setStatus("idle"); setEntries([newEntry(nextId)]); setNextId(n=>n+1); setRace(""); setMechanic(""); setMechanicOther(false); },3000);
+      } catch { setSaveError("Could not save. Check connection."); setStatus("error"); setTimeout(()=>setStatus("idle"),3000); }
+    };
+
+    const filtered = incidents.filter(i=>!filter||[i.race,i.rider,i.category,i.bike,i.mechanic].some(v=>v?.toLowerCase().includes(filter.toLowerCase())));
+    const counts = { critical:incidents.filter(i=>i.severity?.includes("Critical")).length, moderate:incidents.filter(i=>i.severity?.includes("Moderate")).length, minor:incidents.filter(i=>i.severity?.includes("Minor")).length };
+
+    return (
+      <div style={{minHeight:"100vh",background:"#f4f4f5"}}>
+
+        {/* HEADER */}
+        <div style={{background:"#E30613",padding:"0 16px",position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 10px rgba(227,6,19,.3)"}}>
+          <div style={{maxWidth:680,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:54}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:20}}>🔧</span>
+              <span style={{fontSize:20,fontWeight:800,color:"#fff",letterSpacing:".04em"}}>MECHLOG</span>
+              <span style={{fontSize:10,color:"rgba(255,255,255,.45)",fontFamily:"'DM Mono',monospace",letterSpacing:".1em",marginLeft:2}}>COFIDIS · 2026</span>
+            </div>
+            <div style={{display:"flex",gap:3}}>
+              {[["report","📋 Report"],["log",`📋 Log${incidents.length>0?` (${incidents.length})`:""}`],["dashboard","📊 Dashboard"]].map(([v,l])=>(
+                <button key={v} className="btn nav-tab" onClick={()=>setView(v)}
+                  style={{background:view===v?"#fff":"rgba(255,255,255,.15)",color:view===v?"#E30613":"#fff",border:"none",fontSize:view==="dashboard"&&v==="dashboard"?11:11}}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div style={{maxWidth:680,margin:"0 auto",padding:"22px 14px 110px"}}>
+
+          {/* REPORT */}
+          {view==="report" && status==="idle" && (
+            <div className="su" style={{display:"flex",flexDirection:"column",gap:16}}>
+              <div style={{background:"#fff",border:"2px solid #E30613",borderRadius:10}}>
+                <div style={{background:"#E30613",padding:"10px 16px",display:"flex",alignItems:"center",gap:8,borderRadius:"8px 8px 0 0"}}>
+                  <span style={{fontSize:14,color:"#fff",fontWeight:800,letterSpacing:".06em",textTransform:"uppercase"}}>Session details</span>
+                  <span style={{fontSize:11,color:"rgba(255,255,255,.6)",fontFamily:"'DM Mono',monospace"}}>shared for all incidents below</span>
+                </div>
+                <div style={{padding:16,display:"flex",flexDirection:"column",gap:12}}>
+                  <div className="field">
+                    <label>Race</label>
+                    <div style={{position:"relative"}}>
+                      <AC value={race} onChange={setRace} options={RACES} placeholder="Start typing race name…" />
+                      {!race && <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",fontSize:13,color:"#ccc",pointerEvents:"none",fontFamily:"'DM Mono',monospace"}}>type 2-3 letters</div>}
+                    </div>
+                    {race && (
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fde8e9",border:"2px solid #E30613",borderRadius:6,padding:"8px 12px",marginTop:4}}>
+                        <span style={{fontWeight:800,fontSize:15,color:"#E30613"}}>🏁 {race}</span>
+                        <button className="btn" onClick={()=>setRace("")} style={{background:"none",color:"#E30613",fontSize:13,padding:"0 4px",textTransform:"none",letterSpacing:0}}>✕ change</button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="field">
+                    <label>Your name</label>
+                    <Sel value={MECHANICS.includes(mechanic)?mechanic:(mechanicOther?"Other":"")}
+                      onChange={v=>{if(v==="Other"){setMechanic("");setMechanicOther(true);}else{setMechanic(v);setMechanicOther(false);}}}
+                      options={MECHANICS} placeholder="— select your name —" />
+                    {mechanicOther && <input className="inp" value={mechanic} placeholder="Type your name…" style={{borderColor:"#E30613",marginTop:6}} onChange={e=>setMechanic(e.target.value)} />}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#555"}}>
+                  {entries.length} incident{entries.length!==1?"s":""}  ·  <span style={{color:validEntries.length===entries.length&&entries.length>0?"#16a34a":"#E30613"}}>{validEntries.length} complete</span>
+                </div>
+                <button className="btn" onClick={addEntry} style={{padding:"8px 16px",fontSize:13,background:"#fff",color:"#E30613",border:"2px solid #E30613",borderRadius:6}}>+ Add incident</button>
+              </div>
+
+              {entries.map((e,i)=>(
+                <IncidentCard key={e.id} entry={e} idx={i} total={entries.length}
+                  onChange={patch=>updateEntry(e.id,patch)} onRemove={()=>removeEntry(e.id)} onToggle={()=>toggleEntry(e.id)} sharedRace={race} />
+              ))}
+
+              <button className="btn" onClick={handleSubmit}
+                style={{padding:"16px",fontSize:17,background:allValid?"#E30613":"#e0e0e3",color:allValid?"#fff":"#aaa",borderRadius:8,letterSpacing:".06em",cursor:allValid?"pointer":"default",boxShadow:allValid?"0 4px 14px rgba(227,6,19,.3)":"none"}}>
+                {allValid?`SAVE ${entries.length} INCIDENT${entries.length>1?"S":""} →`:"COMPLETE ALL FIELDS TO SAVE"}
+              </button>
+            </div>
+          )}
+
+          {view==="report"&&status==="saving"&&(
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:16}}>
+              <div style={{width:44,height:44,border:"4px solid #f0f0f2",borderTop:"4px solid #E30613",borderRadius:"50%",animation:"spin 0.8s linear infinite"}} />
+              <div style={{fontSize:16,color:"#888",fontFamily:"'DM Mono',monospace"}}>Saving {entries.length} incident{entries.length>1?"s":""}…</div>
+            </div>
+          )}
+          {view==="report"&&status==="success"&&(
+            <div className="pop" style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:16,textAlign:"center"}}>
+              <div style={{width:80,height:80,background:"#dcfce7",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40}}>✅</div>
+              <div style={{fontSize:28,fontWeight:800,color:"#16a34a"}}>{savedCount} Incident{savedCount>1?"s":""} Saved</div>
+              <div style={{fontSize:13,color:"#aaa",fontFamily:"'DM Mono',monospace"}}>Stored in Supabase · resetting…</div>
+            </div>
+          )}
+          {view==="report"&&status==="error"&&(
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:14,textAlign:"center"}}>
+              <div style={{width:70,height:70,background:"#fde8e9",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:36}}>⚠️</div>
+              <div style={{fontSize:22,fontWeight:800,color:"#E30613"}}>Save Failed</div>
+              <div style={{fontSize:13,color:"#888"}}>{saveError}</div>
+            </div>
+          )}
+
+          {/* LOG */}
+          {view==="log"&&(
+            <div className="su" style={{display:"flex",flexDirection:"column",gap:14}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+                <div style={{borderLeft:"4px solid #E30613",paddingLeft:14}}><h1 style={{fontSize:26,fontWeight:800}}>Incident Log</h1></div>
+                <button className="btn" onClick={fetchIncidents} style={{padding:"8px 16px",fontSize:12,background:"#fff",color:"#444",border:"2px solid #e0e0e3",borderRadius:6}}>↻ Refresh</button>
+              </div>
+              {incidents.length>0&&(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+                  {[["Critical","#E30613","#fde8e9",counts.critical],["Moderate","#d97706","#fef3c7",counts.moderate],["Minor","#16a34a","#dcfce7",counts.minor]].map(([l,c,bg,n])=>(
+                    <div key={l} style={{background:bg,border:`2px solid ${c}33`,borderRadius:8,padding:"12px 10px",textAlign:"center"}}>
+                      <div style={{fontSize:28,fontWeight:800,color:c,lineHeight:1}}>{n}</div>
+                      <div style={{fontSize:10,color:c,letterSpacing:".1em",fontFamily:"'DM Mono',monospace",marginTop:2,fontWeight:700}}>{l.toUpperCase()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {loadStatus==="loading"&&<div style={{display:"flex",alignItems:"center",gap:10,color:"#888",fontSize:14,padding:"20px 0"}}><div style={{width:18,height:18,border:"3px solid #e0e0e3",borderTop:"3px solid #E30613",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Loading…</div>}
+              {loadStatus==="error"&&<div style={{color:"#E30613",fontSize:14,fontWeight:700}}>⚠️ Could not load. Check connection.</div>}
+              {loadStatus==="done"&&incidents.length>0&&<input className="inp" placeholder="🔍  Search race, rider, mechanic, category…" value={filter} onChange={e=>setFilter(e.target.value)} />}
+              {loadStatus==="done"&&incidents.length===0&&<div style={{textAlign:"center",padding:"60px 0",color:"#ccc"}}><div style={{fontSize:44,opacity:.2,marginBottom:12}}>🔧</div><div style={{fontSize:18,fontWeight:700}}>No incidents yet</div></div>}
+              {loadStatus==="done"&&filtered.map(inc=>(
+                <div key={inc.id} className="logcard" style={{borderColor:detail?.id===inc.id?"#E30613":"#e0e0e3"}} onClick={()=>setDetail(detail?.id===inc.id?null:inc)}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap",marginBottom:6}}>
+                        <span style={{fontWeight:800,fontSize:17}}>{inc.rider}</span>
+                        <span className="badge badge-cat">{inc.category}</span>
+                        <span className={`badge ${sevClass(inc.severity)}`}>{sevLabel(inc.severity)}</span>
+                      </div>
+                      <div style={{fontSize:13,color:"#666",fontFamily:"'DM Mono',monospace",marginBottom:3}}>{inc.race}{inc.bike?` · ${inc.bike}`:""}</div>
+                      <div style={{fontSize:11,color:"#bbb",fontFamily:"'DM Mono',monospace"}}>📅 {new Date(inc.created_at).toLocaleString("en-GB")}{inc.mechanic?`  ·  👤 ${inc.mechanic}`:""}</div>
+                    </div>
+                    <div style={{color:"#ccc",fontSize:22,transform:detail?.id===inc.id?"rotate(90deg)":"none",transition:"transform .2s",flexShrink:0}}>›</div>
+                  </div>
+                  {detail?.id===inc.id&&(
+                    <div style={{marginTop:12,borderTop:"2px solid #f0f0f2",paddingTop:12,display:"flex",flexDirection:"column",gap:10}}>
+                      <p style={{fontSize:15,lineHeight:1.6,color:"#333"}}>{inc.description}</p>
+                      {inc.photo_url&&<img src={inc.photo_url} alt="incident" style={{width:"100%",borderRadius:6,maxHeight:260,objectFit:"cover",border:"2px solid #e0e0e3"}} onError={e=>e.target.style.display="none"} />}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* DASHBOARD */}
+          {view==="dashboard"&&(
+            loadStatus==="loading"
+              ? <div style={{display:"flex",alignItems:"center",gap:10,color:"#888",fontSize:14,padding:"40px 0"}}><div style={{width:18,height:18,border:"3px solid #e0e0e3",borderTop:"3px solid #E30613",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Loading…</div>
+              : <Dashboard incidents={incidents}
+                  onDelete={async (id) => setIncidents(prev=>prev.filter(i=>i.id!==id))}
+                  onEdit={fetchIncidents} />
+          )}
+        </div>
+
+        {/* STATUS BAR */}
+        <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#fff",borderTop:"2px solid #f0f0f2",padding:"10px 16px"}}>
+          <div style={{maxWidth:680,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:11,color:"#bbb",fontFamily:"'DM Mono',monospace",letterSpacing:".05em"}}>
+            <div style={{display:"flex",alignItems:"center",gap:7}}>
+              <span style={{color:"#16a34a",animation:"pulse 2.5s infinite",fontSize:14}}>●</span>
+              LIVE · SUPABASE
+            </div>
+            {view==="report"&&status==="idle"&&<div style={{color:validEntries.length===entries.length&&entries.length>0?"#16a34a":"#E30613",fontWeight:700}}>{validEntries.length}/{entries.length} READY</div>}
+            {(view==="log"||view==="dashboard")&&<div style={{color:"#888"}}>{incidents.length} INCIDENTS TOTAL</div>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
